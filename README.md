@@ -163,4 +163,45 @@ Nest 어플리케이션이 실행되기 위해서는 하나의 루트 모듈이 
 
 동적 모듈은 모듈이 생성될 때 동적으로 어떠한 변수들이 정해집니다. 즉, 호스트모듈(프로바이더나 컨트롤러와 같은 컴포넌트를 제공하는 모듈)을 가져다 쓰는 소비모듈에서 호스트모듈을 생성할 때 동적으로 값을 설정하는 방식입니다.
 
-동적 모듈의 대표적인 예로 보통 Config라고 부르는 모듈이 있습니다. Config 모듈은 실행환경에 따라 서버에 설정되는 환경변수를 관리하는 모듈입니다. ConfigModule을 동적으로 생성하는 예를 보기 전에 잠시 Node.js 서버에서 일반적으로 사용하는 환경변수 관리 방법을 살펴보겠습니다.
+동적 모듈의 대표적인 예로 보통 Config라고 부르는 모듈이 있습니다. Config 모듈은 실행환경에 따라 서버에 설정되는 환경변수를 관리하는 모듈입니다.
+
+Nest 기본 빌드 옵션은 .ts 파일 외의 asset은 제외하도록 되어 있습니다. 따라서 .env 파일을 out 디렉토리(dist 디렉토리)에 복사할 수 있도록 nest-cli.json에서 옵션을 바꾸어 주어야 합니다.
+
+```json
+{
+    ...
+  "compilerOptions": {
+    "assets": [
+      {
+        "include": "./config/env/*.env",
+        "outDir": "./dist"
+      }
+    ]
+  }
+}
+```
+
+AppModule에 ConfigModule을 동적 모듈로 등록해 보겠습니다.
+
+```ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import emailConfig from './config/emailConfig';
+import { validationSchema } from './config/validationSchema';
+import { UsersModule } from './users/users.module';
+
+@Module({
+  imports: [
+    UsersModule,
+    ConfigModule.forRoot({
+      envFilePath: [`${__dirname}/config/env/.${process.env.NODE_ENV}.env`],
+      load: [emailConfig],
+      isGlobal: true,
+      validationSchema,
+    }),
+  ],
+  controllers: [],
+  providers: [],
+})
+export class AppModule {}
+```
